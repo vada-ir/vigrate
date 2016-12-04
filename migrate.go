@@ -198,7 +198,7 @@ func createMigration(name string) error {
 }
 
 func doMigrateUp(schema string) error {
-	n, err := doMigrate(schema, migrate.Down, 0)
+	n, err := doMigrate(schema, migrate.Up, 0)
 
 	if err == nil {
 		log.Printf("'%d' migration applied", n)

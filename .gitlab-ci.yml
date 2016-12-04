@@ -1,4 +1,8 @@
+image: golang
+
 variables:
+  HTTP_PROXY: "172.17.0.1:7070"
+  HTTPS_PROXY: "172.17.0.1:7070"
 
 stages:
   - lint
@@ -6,11 +10,19 @@ stages:
 
 lint:
   stage: lint
+  tags:
+    - docker
+    - golang
   script:
+    - export GOBIN=$GOPATH/bin
+    - export PATH=$PATH:$GOBIN
     - make lint
 
 build:
   stage: build
+  tags:
+    - docker
+    - golang
   script:
     - make build
   artifacts:

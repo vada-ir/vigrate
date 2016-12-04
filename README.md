@@ -1,27 +1,37 @@
 # Migrate
 migrate will do migration for databases
 
+## Install
+```bash
+go install git.vada.ir/sdp/migrate
+```
+
+## Create Migration
+```bash
+migrate create --name=migration1
+```
+
 ## Migrate Up
 ```bash
-make migrate-up FOLDER=path/to/directory SCHEMA=my_schema
+migrate up --schema=schema1
 ```
 
-## Migrate Down
+## Migrate Rollback
 ```bash
-make migrate-down FOLDER=path/to/directory SCHEMA=my_schema
+migrate rollback --schema=schema1 --step=1
 ```
 
-## Migrate Down All
+## Reset Database
 ```bash
-make migrate-down-all FOLDER=path/to/directory SCHEMA=my_schema
+migrate reset --schema=schema1
 ```
 
-## Migrate Redo
+## Migrate Refresh
 ```bash
-make migrate-redo FOLDER=path/to/directory SCHEMA=my_schema
+migrate refresh --schema=schema1 --step=1
 ```
 
-## Migrate List
+## More help
 ```bash
-make migrate-list FOLDER=path/to/directory SCHEMA=my_schema
+migrate --help
 ```

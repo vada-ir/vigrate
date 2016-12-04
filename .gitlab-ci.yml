@@ -24,6 +24,8 @@ build:
     - docker
     - golang
   script:
+    - export GOBIN=$GOPATH/bin
+    - export PATH=$PATH:$GOBIN
     - make build
   artifacts:
     paths:

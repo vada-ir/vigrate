@@ -1,0 +1,18 @@
+variables:
+
+stages:
+  - lint
+  - build
+
+lint:
+  stage: lint
+  script:
+    - make lint
+
+build:
+  stage: build
+  script:
+    - make build
+  artifacts:
+    paths:
+      - migrate

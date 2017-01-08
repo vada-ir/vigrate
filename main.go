@@ -15,6 +15,7 @@ import (
 	_ "github.com/lib/pq" // import for init
 	"github.com/rubenv/sql-migrate"
 	"gopkg.in/yaml.v2"
+	"sync"
 )
 
 const emptyMigration = `-- +migrate Up
@@ -40,6 +41,10 @@ type Config struct {
 	DriverName     string `yaml:"driver"`
 	Dir            string `yaml:"dir"`
 }
+
+var configMap = make(map[string]*Config)
+
+var once sync.Once
 
 func main() {
 	app := cli.NewApp()
@@ -172,10 +177,8 @@ func main() {
 }
 
 func createMigration(name string) error {
-	config, err := getConfig()
-	if err != nil {
-		return err
-	}
+	config := getConfig()
+
 	data := []byte(emptyMigration)
 	now := time.Now()
 	filename := fmt.Sprintf(
@@ -189,8 +192,9 @@ func createMigration(name string) error {
 		now.Second(),
 		name,
 	)
-	err = ioutil.WriteFile(filename, data, 0644)
+	err := ioutil.WriteFile(filename, data, 0644)
 	if err == nil {
+
 		log.Printf("migration '%s' successfully created", filename)
 	}
 
@@ -198,56 +202,67 @@ func createMigration(name string) error {
 }
 
 func doMigrateUp(schema string) error {
-	n, err := doMigrate(schema, migrate.Up, 0)
+	config := getConfig()
+	n, err := doMigrate(schema, config.Dir, migrate.Up, 0)
 
-	if err == nil {
-		log.Printf("'%d' migration applied", n)
+	if err != nil {
+		return err
 	}
 
-	return err
+	log.Printf("'%d' migration applied", n)
+
+	return nil
 }
 
 func doMigrateRollback(schema string, step int) error {
-	n, err := doMigrate(schema, migrate.Down, step)
+	config := getConfig()
+	n, err := doMigrate(schema, config.Dir, migrate.Down, step)
 
-	if err == nil {
-		log.Printf("'%d' migration rollbacked", n)
+	if err != nil {
+		return err
 	}
+
+	log.Printf("'%d' migration rollbacked", n)
 
 	return err
 }
 
 func doMigrateReset(schema string) error {
-	n, err := doMigrate(schema, migrate.Down, 0)
+	config := getConfig()
+	n, err := doMigrate(schema, config.Dir, migrate.Down, 0)
 
-	if err == nil {
-		log.Printf("'%d' migration rollbacked", n)
+	if err != nil {
+		return err
 	}
+
+	log.Printf("'%d' migration rollbacked", n)
 
 	return err
 }
 
 func doMigrateRefresh(schema string, step int) error {
-	n, err := doMigrate(schema, migrate.Down, step)
+	config := getConfig()
+	n, err := doMigrate(schema, config.Dir, migrate.Down, step)
 
-	if err == nil {
-		log.Printf("'%d' migration rollbacked", n)
-
-		n, err = doMigrate(schema, migrate.Up, step)
-
-		if err == nil {
-			log.Printf("'%d' migration applied again", n)
-		}
+	if err != nil {
+		return err
 	}
 
-	return err
+	log.Printf("'%d' migration rollbacked", n)
+
+	n, err = doMigrate(schema, config.Dir, migrate.Up, step)
+
+	if err != nil {
+		return err
+	}
+
+	log.Printf("'%d' migration applied again", n)
+
+	return nil
 }
 
-func doMigrate(schema string, dir migrate.MigrationDirection, step int) (int, error) {
-	config, err := getConfig()
-	if err != nil {
-		return 0, err
-	}
+func doMigrate(schema, path string, dir migrate.MigrationDirection, step int) (int, error) {
+	config := getConfig()
 
 	db, err := sql.Open(config.DriverName, config.DataSourceName)
 	if err != nil {
@@ -262,7 +277,7 @@ func doMigrate(schema string, dir migrate.MigrationDirection, step int) (int, er
 	}()
 
 	migrations := &migrate.FileMigrationSource{
-		Dir: config.Dir,
+		Dir: path,
 	}
 
 	migrate.SetSchema(schema)
@@ -270,23 +285,29 @@ func doMigrate(schema string, dir migrate.MigrationDirection, step int) (int, er
 	return migrate.ExecMax(db, "postgres", migrations, dir, step)
 }
 
-func getConfig() (*Config, error) {
-	config := make(map[string]*Config)
-	config[env] = &Config{
-		DriverName:     "postgres",
-		DataSourceName: "postgres://postgres:@localhost/postgres?sslmode=verify-full",
-		Dir:            "db/migrations",
-	}
+func loadConfig() {
+	once.Do(func() {
+		configMap[env] = &Config{
+			DriverName:     "postgres",
+			DataSourceName: "postgres://postgres:@localhost/postgres?sslmode=verify-full",
+			Dir:            "db/migrations",
+		}
 
-	file, err := ioutil.ReadFile(configPath)
-	if err != nil {
-		return nil, err
-	}
+		file, err := ioutil.ReadFile(configPath)
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
 
-	err = yaml.Unmarshal(file, &config)
-	if err != nil {
-		return nil, err
-	}
+		err = yaml.Unmarshal(file, &configMap)
+		if err != nil {
+			log.Print(err)
+			return
+		}
+	})
+}
 
-	return config[env], nil
+func getConfig() *Config {
+	loadConfig()
+	return configMap[env]
 }

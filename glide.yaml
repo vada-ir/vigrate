@@ -1,0 +1,6 @@
+package: git.vada.ir/sdp/migrate
+import:
+- package: github.com/codegangsta/cli
+- package: github.com/lib/pq
+- package: github.com/rubenv/sql-migrate
+- package: gopkg.in/yaml.v2

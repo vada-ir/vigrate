@@ -1,82 +1,76 @@
 #@IgnoreInspection BashAddShebang
+export ROOT=$(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 export CGO_ENABLED=0
+export GOOS=linux
 export ENV=development
 
-export APP=migrate
-export LDFLAGS="-w -s -X main.buildTime=`date -u +%Y/%m/%d_%H:%M:%S`"
+export GLIDE_HOME=$(HOME)/.glide
 
-build:
-	go get -v ./...
+export APP=migrate
+export LDFLAGS="-w -s"
+
+export DEBUG=1
+
+all: lint build
+
+fetch: glide-install
+
+contributors:
+	git log --all --format='%aN <%cE>' | sort -u  > CONTRIBUTORS
+
+#######
+# Build
+#######
+
+build: fetch
 	go build -v -o $(APP) -a -installsuffix cgo -ldflags $(LDFLAGS) *.go
 
-install:
-	go get -v ./...
+install: fetch
 	go install -v -a -installsuffix cgo -ldflags $(LDFLAGS) *.go
 
-lint:
-	go get -v ./...
-#	gofmt -s - Checks if the code is properly formatted and could not be further simplified.
-	gofmt -s -w .
-	go get -v github.com/GeertJohan/fgt
-#	go vet - Reports potential errors that otherwise compile.
-#	go get -v golang.org/x/tools/cmd/vet
-	find . -type d | grep -v '\.\/\.' | xargs fgt go vet
-#	go vet --shadow - Reports variables that may have been unintentionally shadowed.
-#	find . -type d | grep -v '\.\/\.' | xargs fgt vet --shadow
-#	gotype - Syntactic and semantic analysis similar to the Go compiler.
-	go get -v golang.org/x/tools/cmd/gotype
-	gotype .
-#	deadcode - Finds unused code.
-	go get -v github.com/tsenart/deadcode
-	fgt deadcode .
-#	gocyclo - Computes the cyclomatic complexity of functions.
-	go get -v github.com/fzipp/gocyclo
-	find ./*.go -type f | xargs fgt gocyclo -over 15
-#	golint - Google's (mostly stylistic) linter.
-	go get -v github.com/golang/lint/golint
-	find ./*.go -type f | xargs fgt golint
-#	varcheck - Find unused global variables and constants.
-	go get -v github.com/opennota/check/cmd/varcheck
-	varcheck ./...
-#	structcheck - Find unused struct fields.
-	go get -v github.com/opennota/check/cmd/structcheck
-	structcheck ./...
-#	aligncheck - Warn about un-optimally aligned structures.
-	go get -v github.com/opennota/check/cmd/aligncheck
-	aligncheck ./...
-#	errcheck - Check that error return values are used.
-	go get -v github.com/kisielk/errcheck
-	find . -type d | grep -v '\.\/\.' | xargs fgt errcheck
-#	dupl - Reports potentially duplicated code.
-	go get -v github.com/mibk/dupl
-	find ./*.go -type f | xargs fgt dupl -t 100 -plumbing
-#	ineffassign - Detect when assignments to existing variables are not used.
-	go get -v github.com/gordonklaus/ineffassign
-	ineffassign .
-#	interfacer - Suggest narrower interfaces that can be used.
-	go get -v github.com/mvdan/interfacer/cmd/interfacer
-	find . -type d | grep -v '\.\/\.' | xargs fgt interfacer
-#	unconvert - Detect redundant type conversions.
-	go get -v github.com/mdempsky/unconvert
-	unconvert -v .
-#	goconst - Finds repeated strings that could be replaced by a constant.
-	go get -v github.com/jgautheron/goconst/cmd/goconst
-	goconst ./...
-#	gosimple - Report simplifications in code.
-	go get -v honnef.co/go/simple/cmd/gosimple
-	gosimple ./...
-#	staticcheck - Check inputs to functions for correctness
-	go get -v honnef.co/go/staticcheck/cmd/staticcheck
-	staticcheck ./...
-#	goimports - Checks missing or unreferenced package imports.
-	go get -v golang.org/x/tools/cmd/goimports
-	goimports -w .
-#	lll - Report long lines (see --line-length=N).
-	go get -v github.com/walle/lll/...
-	find ./*.go -type f | xargs fgt lll --maxlength 120
-#	misspell - Finds commonly misspelled English words.
-	go get -v github.com/client9/misspell/cmd/misspell
-	find ./*.go -type f | xargs misspell -error
-#	unused - Find unused variables.
-	go get -v honnef.co/go/unused/cmd/unused
-	unused ./...
+run:
+	go run *.go
+
+######
+# Lint
+######
+
+check-gometalinter:
+	which gometalinter || go get -u -v github.com/alecthomas/gometalinter && gometalinter --install
+
+lint: fetch check-gometalinter
+	gometalinter --vendor --skip=vendor/ --exclude=vendor \
+	--disable=gotype  --disable=dupl \
+	--enable=gofmt --enable=misspell --enable=lll --enable=unused  \
+	--deadline=5m --cyclo-over=20 --line-length=120 --min-occurrences=5 \
+	--concurrency=2 \
+	./...
+
+format:
+	gofmt -s -w $(ROOT)
+
+#######
+# Glide
+#######
+
+check-glide: check-glide
+	which glide || curl https://glide.sh/get | sh
+
+check-glide-init:
+	@[ -f $(ROOT)/glide.yaml ] || make -f $(ROOT)/Makefile glide-init
+
+# Scan a codebase and create a glide.yaml file containing the dependencies.
+glide-init: check-glide
+	glide init
+
+# Install the latest dependencies into the vendor directory matching the version resolution information.
+# The complete dependency tree is installed, importing Glide, Godep, GB, and GPM configuration along the way.
+# A lock file is created from the final output.
+glide-update: check-glide check-glide-init
+	glide update
+
+# Install the dependencies and revisions listed in the lock file into the vendor directory.
+# If no lock file exists an update is run.
+glide-install: check-glide check-glide-init
+	glide install
+

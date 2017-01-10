@@ -1,8 +1,9 @@
 image: golang
 
 variables:
-  HTTP_PROXY: "172.17.0.1:7070"
-  HTTPS_PROXY: "172.17.0.1:7070"
+  HTTP_PROXY: "prx-1.vsrv.ir:7070"
+  HTTPS_PROXY: "prx-1.vsrv.ir:7070"
+  NO_PROXY: "vada.ir,git.vada.ir"
 
 stages:
   - lint

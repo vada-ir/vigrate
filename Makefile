@@ -1,6 +1,6 @@
 #@IgnoreInspection BashAddShebang
 export ROOT=$(realpath $(dir $(lastword $(MAKEFILE_LIST))))
-export CGO_ENABLED=0
+export CGO_ENABLED= 0
 export GOOS=linux
 export ENV=development
 
@@ -36,13 +36,13 @@ run:
 ######
 
 check-gometalinter:
-	which gometalinter || go get -u -v github.com/alecthomas/gometalinter && gometalinter --install
+	which gometalinter || (go get -u -v github.com/alecthomas/gometalinter && gometalinter --install)
 
 lint: fetch check-gometalinter
 	gometalinter --vendor --skip=vendor/ --exclude=vendor \
-	--disable=gotype  --disable=dupl \
-	--enable=gofmt --enable=misspell --enable=lll --enable=unused  \
-	--deadline=5m --cyclo-over=20 --line-length=120 --min-occurrences=5 \
+	--disable=gotype  --disable=dupl --disable=aligncheck \
+	--enable=gofmt --enable=misspell --enable=unused  \
+	--deadline=5m --cyclo-over=20 --min-occurrences=5 \
 	--concurrency=2 \
 	./...
 

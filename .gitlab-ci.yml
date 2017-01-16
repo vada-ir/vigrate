@@ -1,10 +1,5 @@
 image: golang
 
-variables:
-  HTTP_PROXY: "prx-1.vsrv.ir:7070"
-  HTTPS_PROXY: "prx-1.vsrv.ir:7070"
-  NO_PROXY: "vada.ir,git.vada.ir"
-
 stages:
   - lint
   - build
@@ -15,8 +10,13 @@ lint:
     - docker
     - golang
   script:
-    - export GOBIN=$GOPATH/bin
-    - export PATH=$PATH:$GOBIN
+    - export PATH=/go/bin:/usr/local/go/bin:$PATH
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - eval $(ssh-agent -s)
+    - ssh-add <(echo "$SSH_PRIVATE_KEY")
+    - mkdir -p ~/.ssh
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+    - git config --global url."ssh://git@git.vada.ir/".insteadOf "https://git.vada.ir/"
     - make lint
 
 build:
@@ -25,8 +25,13 @@ build:
     - docker
     - golang
   script:
-    - export GOBIN=$GOPATH/bin
-    - export PATH=$PATH:$GOBIN
+    - export PATH=/go/bin:/usr/local/go/bin:$PATH
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - eval $(ssh-agent -s)
+    - ssh-add <(echo "$SSH_PRIVATE_KEY")
+    - mkdir -p ~/.ssh
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+    - git config --global url."ssh://git@git.vada.ir/".insteadOf "https://git.vada.ir/"
     - make build
   artifacts:
     paths:

@@ -9,7 +9,7 @@ export GLIDE_HOME=$(HOME)/.glide
 export APP=migrate
 export LDFLAGS="-w -s"
 
-export DEBUG=1
+export DEBUG= 1
 
 all: lint build
 
@@ -39,15 +39,24 @@ check-gometalinter:
 	which gometalinter || (go get -u -v github.com/alecthomas/gometalinter && gometalinter --install)
 
 lint: fetch check-gometalinter
-	gometalinter --vendor --skip=vendor/ --exclude=vendor \
-	--disable=gotype  --disable=dupl --disable=aligncheck \
-	--enable=gofmt --enable=misspell --enable=unused  \
-	--deadline=5m --cyclo-over=20 --min-occurrences=5 \
-	--concurrency=2 \
+	gometalinter \
+	--vendor --skip=vendor/ --exclude=vendor \
+	--disable-all \
+	--enable=gofmt \
+	--enable=vet --enable=vetshadow \
+	--enable=gocyclo \
+	--cyclo-over=128 \
+	--enable=golint \
+	--enable=ineffassign \
+	--enable=misspell \
+	--concurrency=1 \
+	--deadline=5m \
 	./...
 
 format:
-	gofmt -s -w $(ROOT)
+	which gometalinter || go get -u -v golang.org/x/tools/cmd/goimports
+	find $(ROOT)/ -type f -name "*.go" | grep -v $(ROOT)/vendor | xargs --max-args=1 --replace=R goimports -w R
+	find $(ROOT)/ -type f -name "*.go" | grep -v $(ROOT)/vendor | xargs --max-args=1 --replace=R gofmt -s -w R
 
 #######
 # Glide
@@ -73,4 +82,5 @@ glide-update: check-glide check-glide-init
 # If no lock file exists an update is run.
 glide-install: check-glide check-glide-init
 	glide install
+
 

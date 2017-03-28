@@ -3,19 +3,18 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
+	"sync"
 	"time"
 
-	"database/sql"
-
+	"github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	_ "github.com/lib/pq" // import for init
 	"github.com/rubenv/sql-migrate"
 	"gopkg.in/yaml.v2"
-	"sync"
 )
 
 const emptyMigration = `-- +migrate Up
@@ -102,7 +101,7 @@ func main() {
 			Action: func(c *cli.Context) {
 				err := createMigration(migrationTitle)
 				if err != nil {
-					log.Panic(err)
+					logrus.Panic(err)
 				}
 			},
 		},
@@ -117,7 +116,7 @@ func main() {
 			Action: func(c *cli.Context) {
 				err := doMigrateUp(schema)
 				if err != nil {
-					log.Panic(err)
+					logrus.Panic(err)
 				}
 			},
 		},
@@ -133,7 +132,7 @@ func main() {
 			Action: func(c *cli.Context) {
 				err := doMigrateRollback(schema, step)
 				if err != nil {
-					log.Panic(err)
+					logrus.Panic(err)
 				}
 			},
 		},
@@ -148,7 +147,7 @@ func main() {
 			Action: func(c *cli.Context) {
 				err := doMigrateReset(schema)
 				if err != nil {
-					log.Panic(err)
+					logrus.Panic(err)
 				}
 			},
 		},
@@ -164,7 +163,7 @@ func main() {
 			Action: func(c *cli.Context) {
 				err := doMigrateRefresh(schema, step)
 				if err != nil {
-					log.Panic(err)
+					logrus.Panic(err)
 				}
 			},
 		},
@@ -172,7 +171,7 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Panic(err)
+		logrus.Panic(err)
 	}
 }
 
@@ -195,7 +194,7 @@ func createMigration(name string) error {
 	err := ioutil.WriteFile(filename, data, 0644)
 	if err == nil {
 
-		log.Printf("migration '%s' successfully created", filename)
+		logrus.Printf("migration '%s' successfully created", filename)
 	}
 
 	return err
@@ -209,7 +208,7 @@ func doMigrateUp(schema string) error {
 		return err
 	}
 
-	log.Printf("'%d' migration applied", n)
+	logrus.Printf("'%d' migration applied", n)
 
 	return nil
 }
@@ -222,7 +221,7 @@ func doMigrateRollback(schema string, step int) error {
 		return err
 	}
 
-	log.Printf("'%d' migration rollbacked", n)
+	logrus.Printf("'%d' migration rollbacked", n)
 
 	return err
 }
@@ -235,7 +234,7 @@ func doMigrateReset(schema string) error {
 		return err
 	}
 
-	log.Printf("'%d' migration rollbacked", n)
+	logrus.Printf("'%d' migration rollbacked", n)
 
 	return err
 }
@@ -248,7 +247,7 @@ func doMigrateRefresh(schema string, step int) error {
 		return err
 	}
 
-	log.Printf("'%d' migration rollbacked", n)
+	logrus.Printf("'%d' migration rollbacked", n)
 
 	n, err = doMigrate(schema, config.Dir, migrate.Up, step)
 
@@ -256,7 +255,7 @@ func doMigrateRefresh(schema string, step int) error {
 		return err
 	}
 
-	log.Printf("'%d' migration applied again", n)
+	logrus.Printf("'%d' migration applied again", n)
 
 	return nil
 }
@@ -272,7 +271,7 @@ func doMigrate(schema, path string, dir migrate.MigrationDirection, step int) (i
 	defer func() {
 		err := db.Close()
 		if err != nil {
-			log.Panic(err)
+			logrus.Panic(err)
 		}
 	}()
 
@@ -295,13 +294,13 @@ func loadConfig() {
 
 		file, err := ioutil.ReadFile(configPath)
 		if err != nil {
-			log.Fatal(err)
+			logrus.Fatal(err)
 			return
 		}
 
 		err = yaml.Unmarshal(file, &configMap)
 		if err != nil {
-			log.Print(err)
+			logrus.Print(err)
 			return
 		}
 	})

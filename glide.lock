@@ -1,16 +1,22 @@
 hash: 30afed77e7e3fcf261183750468dbcdf5b566b63ab802a2f15a23a1af12bd936
-updated: 2017-01-08T18:11:02.290078343+03:30
+updated: 2017-03-28T12:11:24.597982965+04:30
 imports:
 - name: github.com/codegangsta/cli
   version: 0bdeddeeb0f650497d603c4ad7b20cfe685682f6
 - name: github.com/lib/pq
-  version: 22cb3e4c487ce6242e2b03369219e5631eed1221
+  version: ca5bc43047f2138703da0f3d3ca89a59f3d597f1
   subpackages:
   - oid
 - name: github.com/rubenv/sql-migrate
   version: 1ed79968dfca5de79adb13c84523caaa4fc865a9
   subpackages:
   - sqlparse
+- name: github.com/Sirupsen/logrus
+  version: ba1b36c82c5e05c4f912a88eab0dcd91a171688f
+- name: golang.org/x/sys
+  version: 99f16d856c9836c42d24e7ab64ea72916925fa97
+  subpackages:
+  - unix
 - name: gopkg.in/gorp.v1
   version: c87af80f3cc5036b55b83d77171e156791085e2e
 - name: gopkg.in/yaml.v2

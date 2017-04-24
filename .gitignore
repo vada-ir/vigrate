@@ -1,2 +1,4 @@
 migrate
 /vendor/
+*.cov
+/coverage/

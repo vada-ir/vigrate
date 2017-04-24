@@ -4,6 +4,7 @@ export CGO_ENABLED= 0
 export GOOS=linux
 export ENV=development
 
+export COVERAGE_DIR=$(ROOT)/coverage
 export GLIDE_HOME=$(HOME)/.glide
 
 export APP=migrate
@@ -11,7 +12,7 @@ export LDFLAGS="-w -s"
 
 export DEBUG= 1
 
-all: lint build
+all: lint build citest
 
 fetch: glide-install
 
@@ -54,12 +55,12 @@ lint: fetch check-gometalinter
 	./...
 
 format:
-	which gometalinter || go get -u -v golang.org/x/tools/cmd/goimports
+	which goimports || go get -u -v golang.org/x/tools/cmd/goimports
 	find $(ROOT)/ -type f -name "*.go" | grep -v $(ROOT)/vendor | xargs --max-args=1 --replace=R goimports -w R
 	find $(ROOT)/ -type f -name "*.go" | grep -v $(ROOT)/vendor | xargs --max-args=1 --replace=R gofmt -s -w R
 
 #######
-# Glide
+# Vendor
 #######
 
 check-glide: check-glide
@@ -83,4 +84,27 @@ glide-update: check-glide check-glide-init
 glide-install: check-glide check-glide-init
 	glide install
 
+
+#########
+# Test
+#########
+
+check-goconvey:
+	which goconvey || go get -u -v github.com/smartystreets/goconvey
+
+test: fetch check-goconvey
+	ENV=testing goconvey -host=localhost -port=8080 -workDir=$(ROOT) || true
+
+citest: fetch
+	ENV=testing go list ./... | grep -v /vendor/ | xargs --max-args=1 --replace=R  go test -v -coverprofile=coverage.cov -covermode=atomic R
+
+coverage-report:
+	[ -d $(COVERAGE_DIR) ] || mkdir -p $(COVERAGE_DIR)
+	# Writes atomic mode on top of file
+	echo 'mode: atomic' > $(COVERAGE_DIR)/full.cov
+	# Collects all coverage files and skips top line with mode
+	find $(ROOT)/* -type f -name coverage.cov | xargs tail -q -n +2 >> ${COVERAGE_DIR}/full.cov
+	# generate full report
+	go tool cover -func=${COVERAGE_DIR}/full.cov
+	go tool cover -html=${COVERAGE_DIR}/full.cov -o ${COVERAGE_DIR}/coverage.html
 

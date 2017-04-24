@@ -3,6 +3,16 @@ image: golang
 stages:
   - lint
   - build
+  - test
+
+before_script:
+  - export PATH=/go/bin:/usr/local/go/bin:$PATH
+  - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+  - eval $(ssh-agent -s)
+  - ssh-add <(echo "$SSH_PRIVATE_KEY")
+  - mkdir -p ~/.ssh
+  - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  - git config --global url."ssh://git@git.vada.ir/".insteadOf "https://git.vada.ir/"
 
 lint:
   stage: lint
@@ -10,13 +20,6 @@ lint:
     - docker
     - golang
   script:
-    - export PATH=/go/bin:/usr/local/go/bin:$PATH
-    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
-    - eval $(ssh-agent -s)
-    - ssh-add <(echo "$SSH_PRIVATE_KEY")
-    - mkdir -p ~/.ssh
-    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
-    - git config --global url."ssh://git@git.vada.ir/".insteadOf "https://git.vada.ir/"
     - make lint
 
 build:
@@ -25,14 +28,16 @@ build:
     - docker
     - golang
   script:
-    - export PATH=/go/bin:/usr/local/go/bin:$PATH
-    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
-    - eval $(ssh-agent -s)
-    - ssh-add <(echo "$SSH_PRIVATE_KEY")
-    - mkdir -p ~/.ssh
-    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
-    - git config --global url."ssh://git@git.vada.ir/".insteadOf "https://git.vada.ir/"
     - make build
   artifacts:
     paths:
       - migrate
+
+test:
+  stage: test
+  tags:
+    - docker
+    - golang
+  script:
+    - make citest
+    - make coverage-report

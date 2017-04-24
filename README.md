@@ -1,4 +1,7 @@
 # Migrate
+
+[![build status](https://git.vada.ir/sdp/migrate/badges/master/build.svg)](https://git.vada.ir/sdp/migrate/commits/master) [![coverage report](https://git.vada.ir/sdp/migrate/badges/master/coverage.svg)](https://git.vada.ir/sdp/migrate/commits/master)
+
 migrate will do migration for databases
 
 ## Install

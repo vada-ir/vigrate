@@ -7,7 +7,7 @@ export ENV=development
 export COVERAGE_DIR=$(ROOT)/coverage
 export GLIDE_HOME=$(HOME)/.glide
 
-export APP=migrate
+export APP=vigrate
 export LDFLAGS="-w -s"
 
 export DEBUG= 1

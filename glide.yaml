@@ -1,4 +1,4 @@
-package: git.vada.ir/sdp/migrate
+package: github.com/vada-ir/vigrate
 import:
 - package: github.com/codegangsta/cli
 - package: github.com/lib/pq

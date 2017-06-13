@@ -1,4 +1,4 @@
-// App migrate is a sql migration tool for sdp
+// App vigrate is a sql migration tool
 // Note: this is a tool
 package main
 
@@ -12,7 +12,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
-	_ "github.com/lib/pq" // import for init
+	_ "github.com/lib/pq"
 	"github.com/rubenv/sql-migrate"
 	"gopkg.in/yaml.v2"
 )
@@ -47,8 +47,8 @@ var once sync.Once
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "Migrate"
-	app.Usage = "migration tool for sdp"
+	app.Name = "Vigrate"
+	app.Usage = "migration tool"
 	app.Version = "0.0.1"
 
 	stepFlag := cli.IntFlag{

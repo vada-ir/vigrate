@@ -1,4 +1,4 @@
-migrate
+vigrate
 /vendor/
 *.cov
 /coverage/
